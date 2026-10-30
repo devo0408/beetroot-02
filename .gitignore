@@ -1,0 +1,11 @@
+# CMake / CLion build output
+build/
+cmake-build-*/
+
+# Makefile build output
+/Debug/
+/Release/
+
+# CLion per-user files
+.idea/workspace.xml
+.idea/shelf/
