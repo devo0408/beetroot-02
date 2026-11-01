@@ -59,6 +59,7 @@ typedef struct BUTTON_type_t {
 } BUTTON_type_t;
 
 BUTTON_type_t TURN_OFF_BUTTON = {.port = BUTTON_1_GPIO_Port, .pin = BUTTON_1_Pin, .last_time_sample_timestamp = 0u};
+BUTTON_type_t LED_2_PERIOD_BUTTON = {.port = BUTTON_2_GPIO_Port, .pin = BUTTON_2_Pin, .last_time_sample_timestamp = 0u};
 
 
 
@@ -100,6 +101,26 @@ void App::superloop()
           }
         }
 
+      }
+
+      // change LED 2 period
+      BUTTON_type_t* led_2_period_button =  &LED_2_PERIOD_BUTTON;
+      if (loop_timestamp_now - led_2_period_button->last_time_sample_timestamp >= BTN_SAMPLE_PERIOD_TIMESTAMP) {
+
+        GPIO_PinState state = HAL_GPIO_ReadPin(led_2_period_button->port, led_2_period_button->pin);
+
+        if (state) {
+          led_2_period_button->RegisterClean();
+        } else {
+          led_2_period_button->RegisterClick();
+        }
+
+        if (led_2_period_button->IsPressed()) {
+
+          LED_type_t* led = &LEDS[1]; // led 2 index
+          uint32_t led_2_period =  led->half_period;
+          led->half_period = led_2_period * 2;
+        }
       }
 
 
