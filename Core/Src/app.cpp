@@ -8,6 +8,8 @@
 #include "app.hpp"
 #include "main.h"
 
+static constexpr uint32_t BTN_SAMPLE_PERIOD_TIMESTAMP = 5;
+
 uint32_t loop_timestamp_now = 0u;
 
 typedef struct {
@@ -24,6 +26,42 @@ LED_type_t LEDS[] =
   [2] = {.port = LED_3_GPIO_Port, .pin = LED_3_Pin, .half_period = 1000, .last_time_change_timestamp = 0u},
 };
 
+typedef struct BUTTON_type_t {
+
+  static constexpr uint32_t BTN_STABLE_STATE_CLICKS = 5;
+
+  GPIO_TypeDef * port;
+  uint32_t pin;
+  uint32_t last_time_sample_timestamp;
+
+  uint32_t clickCount = 0;
+
+  void RegisterClick()
+  {
+    if (clickCount < BTN_STABLE_STATE_CLICKS)
+    {
+      clickCount++;
+    }
+  }
+
+  void RegisterClean()
+  {
+    if (clickCount > 0)
+    {
+      clickCount--;
+    }
+  }
+
+  bool IsPressed() {
+    return BTN_STABLE_STATE_CLICKS == clickCount;
+  }
+
+} BUTTON_type_t;
+
+BUTTON_type_t TURN_OFF_BUTTON = {.port = BUTTON_1_GPIO_Port, .pin = BUTTON_1_Pin, .last_time_sample_timestamp = 0u};
+
+
+
 void App::init()
 {
 }
@@ -35,7 +73,39 @@ void App::superloop()
   {
     loop_timestamp_now = HAL_GetTick();
     {
-      for (uint8_t led_idx = 0; led_idx < 3; led_idx++) {
+
+      // turn off all leds by button click
+      BUTTON_type_t* turn_off_button_pointer =  &TURN_OFF_BUTTON;
+      if (loop_timestamp_now - turn_off_button_pointer->last_time_sample_timestamp >= BTN_SAMPLE_PERIOD_TIMESTAMP)
+      {
+        GPIO_PinState state = HAL_GPIO_ReadPin(turn_off_button_pointer->port, turn_off_button_pointer->pin);
+
+        if (state) {
+          turn_off_button_pointer->RegisterClean();
+        } else {
+          turn_off_button_pointer->RegisterClick();
+        }
+
+        if (turn_off_button_pointer->IsPressed())
+        {
+          uint8_t leds_size = sizeof(LEDS) / sizeof(LEDS[0]);
+          for (uint8_t led_idx = 0; led_idx < leds_size; led_idx++) {
+
+            LED_type_t* led = &LEDS[led_idx];
+            if (loop_timestamp_now - led->last_time_change_timestamp >= led->half_period)
+            {
+              HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET); // Schema how LED connected: 3.3 V - R - LED -  PA2
+              led->last_time_change_timestamp = loop_timestamp_now;
+            }
+          }
+        }
+
+      }
+
+
+      // LED blinks
+      uint8_t leds_size = sizeof(LEDS) / sizeof(LEDS[0]);
+      for (uint8_t led_idx = 0; led_idx < leds_size; led_idx++) {
 
         LED_type_t* led = &LEDS[led_idx];
         if (loop_timestamp_now - led->last_time_change_timestamp >= led->half_period)
