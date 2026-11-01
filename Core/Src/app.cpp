@@ -34,13 +34,7 @@ void App::superloop()
   while (true)
   {
     loop_timestamp_now = HAL_GetTick();
-    //if (HAL_GPIO_ReadPin(BUTTON_1_GPIO_Port, BUTTON_1_Pin) == GPIO_PIN_RESET)
     {
-      // __disable_irq();
-      // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-      // __enable_irq();
-      // HAL_Delay(500);
-
       for (uint8_t led_idx = 0; led_idx < 3; led_idx++) {
 
         LED_type_t* led = &LEDS[led_idx];
