@@ -9,6 +9,7 @@
 #include "main.h"
 
 static constexpr uint32_t BTN_SAMPLE_PERIOD_TIMESTAMP = 5;
+static constexpr uint32_t LED_MAX_HALF_PERIOD = 8000;
 
 uint32_t loop_timestamp_now = 0u;
 
@@ -35,6 +36,7 @@ typedef struct BUTTON_type_t {
   uint32_t last_time_sample_timestamp;
 
   uint32_t clickCount = 0;
+  bool wasPressed = false;
 
   void RegisterClick()
   {
@@ -54,6 +56,13 @@ typedef struct BUTTON_type_t {
 
   bool IsPressed() {
     return BTN_STABLE_STATE_CLICKS == clickCount;
+  }
+
+  bool JustPressed() {
+    bool pressed = IsPressed();
+    bool result = pressed && !wasPressed;
+    wasPressed = pressed;
+    return result;
   }
 
 } BUTTON_type_t;
@@ -80,6 +89,7 @@ void App::superloop()
       if (loop_timestamp_now - turn_off_button_pointer->last_time_sample_timestamp >= BTN_SAMPLE_PERIOD_TIMESTAMP)
       {
         GPIO_PinState state = HAL_GPIO_ReadPin(turn_off_button_pointer->port, turn_off_button_pointer->pin);
+        turn_off_button_pointer->last_time_sample_timestamp = loop_timestamp_now;
 
         if (state) {
           turn_off_button_pointer->RegisterClean();
@@ -108,6 +118,7 @@ void App::superloop()
       if (loop_timestamp_now - led_2_period_button->last_time_sample_timestamp >= BTN_SAMPLE_PERIOD_TIMESTAMP) {
 
         GPIO_PinState state = HAL_GPIO_ReadPin(led_2_period_button->port, led_2_period_button->pin);
+        led_2_period_button->last_time_sample_timestamp = loop_timestamp_now;
 
         if (state) {
           led_2_period_button->RegisterClean();
@@ -115,11 +126,12 @@ void App::superloop()
           led_2_period_button->RegisterClick();
         }
 
-        if (led_2_period_button->IsPressed()) {
+        if (led_2_period_button->JustPressed()) {
 
           LED_type_t* led = &LEDS[1]; // led 2 index
-          uint32_t led_2_period =  led->half_period;
-          led->half_period = led_2_period * 2;
+          if (led->half_period < LED_MAX_HALF_PERIOD) {
+            led->half_period *= 2;
+          }
         }
       }
 
