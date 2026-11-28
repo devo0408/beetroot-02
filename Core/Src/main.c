@@ -98,7 +98,12 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  App_Main();
+
+  AppParams appParams = {
+    .Watch_Dog_Counter = &hiwdg
+  };
+
+  App_Main(appParams);
 
   /* USER CODE END 2 */
 
