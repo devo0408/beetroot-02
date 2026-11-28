@@ -2,15 +2,13 @@
 #ifndef __APP_H
 #define __APP_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "main.h"
+
+typedef struct {
+    IWDG_HandleTypeDef* Watch_Dog_Counter;
+} AppParams;
 
 
-void App_Main(void);
-
-#ifdef __cplusplus
-}
-#endif
+void App_Main(AppParams appParams);
 
 #endif /* __APP_H */
